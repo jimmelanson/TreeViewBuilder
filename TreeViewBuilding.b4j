@@ -1,0 +1,831 @@
+﻿Version=4.2
+AppType=JavaFX
+NumberOfModules=1
+Module1=TreeViewManager
+Build1=Default,b4j.example
+NumberOfFiles=20
+File1=add.png
+File2=arrow_down.png
+File3=arrow_left.png
+File4=arrow_right.png
+File5=arrow_up.png
+File6=book.png
+File7=book_open.png
+File8=chart_delete.png
+File9=cross.png
+File10=group_blue.png
+File11=group_green.png
+File12=group_grey.png
+File13=json.png
+File14=main_form.bjl
+File15=page_copy.png
+File16=page_edit.png
+File17=shape_move_backwards.png
+File18=shape_move_forwards.png
+File19=textfield_rename.png
+File20=xml.png
+NumberOfLibraries=7
+Library1=jcore
+Library2=jfx
+Library3=javaobject
+Library4=jrldialogs8
+Library5=json
+Library6=jxmlsax
+Library7=jreflection
+@EndOfDesignText@
+#Region  Project Attributes 
+	#MainFormWidth: 800
+	#MainFormHeight: 595 
+#End Region
+
+Sub Process_Globals
+	Private fx As JFX
+	Private MainForm As Form
+	Private TreeView1 As TreeView
+	Private dialogue8 As Dialogs8
+	'Tree management handlers
+	Private boolHandlingMouseClick As Boolean
+	Private lastTreeItemSelected As TreeItem
+	Private tvm As TreeViewManager
+	Private mapContextMenus As Map
+	Private mapMainMenus As Map
+	Public taResults As TextArea
+	Private btnToXML As Button
+	Private btnToJson As Button
+	Private MenuBar1 As MenuBar
+	Private txtField1 As TextField
+	Private txtField2 As TextField
+	Private txtField3 As TextField
+	Private mapDataStore As Map
+	Private book_closed,book_open As Image
+End Sub
+
+Sub AppStart (Form1 As Form, Args() As String)
+	MainForm = Form1
+	MainForm.SetFormStyle("UNIFIED")
+	MainForm.RootPane.LoadLayout("main_form") 'Load the layout file.
+	MainForm.Show
+	tvm.Initialize(TreeView1)
+	dialogue8.Initialize
+	mapDataStore.Initialize
+	
+	book_closed.Initialize(File.DirAssets,"book.png")
+	book_open.Initialize(File.DirAssets,"book_open.png")
+
+	'only remove the comment from one at a time for testing the various options
+	'BuildTree_Option2 ' Two Levels
+	'BuildTree_Option3 ' Three Levels
+	BuildTree_Option4 ' Four Levels
+	'BuildTree_Option5 ' One Level
+	'BuildTree_Option6 ' One-Level using class module
+
+	mapContextMenus.Initialize
+	CollectContextMenuItems(mapContextMenus, TreeView1.ContextMenu.MenuItems)
+	mapMainMenus.Initialize
+	CollectMenuItems(mapMainMenus, MenuBar1.Menus)
+	
+	
+	Dim r As Reflector
+    Dim debug As Boolean = r.GetStaticField("anywheresoftware.b4a.BA", "debugMode")
+   Log(debug)
+	
+End Sub
+
+#Region Nodal Methods
+
+'These subs show you how to build the tree and children without using the class module
+'Two Levels
+Sub BuildTree_Option2
+   For i = 1 To 3
+   	'Declare the tree ITEM
+     Dim ti As TreeItem
+	 'Set the text displayed
+     ti.Initialize("ti", "Item #" & i)
+	 
+	 
+	 For i2 = 1 To 10
+		 'Declare the CHILD item
+	     Dim cti As TreeItem
+		 'Set the text to be displayed
+	     cti.Initialize("ti", "My father is Item #" & i)
+		 'Add the child to the parent
+	     ti.Children.Add(cti) 'add the child
+	 Next
+	 'Add the parent to the tree
+     TreeView1.Root.Children.Add(ti) 'add the father to the root
+   Next
+End Sub
+
+'Three levels
+Sub BuildTree_Option3
+   For i = 1 To 10
+   	'Declare the tree ITEM
+     Dim ti As TreeItem
+	 'Set the text displayed
+     ti.Initialize("ti", "Item #" & i)
+	 For i2 = 1 To 10
+		 'Declare the CHILD item
+	     Dim cti As TreeItem
+		 'Set the text to be displayed
+	     cti.Initialize("ti", "My father is Item #" & i)
+		 For i3 = 1 To 5
+			 'Declare the GRANDCHILD item
+		     Dim gcti As TreeItem
+			 'Set the text to be displayed
+		     gcti.Initialize("ti", "My grand-father is Item #" & i)
+			 'Add the child to the parent
+		     cti.Children.Add(gcti) 'add the child
+		Next
+		 'Add the child to the parent
+	     ti.Children.Add(cti) 'add the child
+	 Next
+	 'Add the parent to the tree
+     TreeView1.Root.Children.Add(ti) 'add the father to the root
+   Next
+End Sub
+
+'Four levels
+Sub BuildTree_Option4
+   For i = 1 To 10
+   	'Declare the tree ITEM
+     Dim ti As TreeItem
+	 'Set the text displayed
+     ti.Initialize("ti", "Item #" & i)
+	 For i2 = 1 To 5
+		 'Declare the CHILD item
+	     Dim cti As TreeItem
+		 'Set the text to be displayed
+	     cti.Initialize("ti", "Child #" & i2)
+		 For i3 = 1 To 4
+			 'Declare the GRANDCHILD item
+		     Dim gcti As TreeItem
+			 'Set the text to be displayed
+		     gcti.Initialize("ti", "Grandhild Item #" & i3)
+			 For i4 = 1 To 3
+				 'Declare the GREAT GRANDCHILD item
+			     Dim ggcti As TreeItem
+				 'Set the text to be displayed
+			     ggcti.Initialize("ti", "Great Grandchild is Item #" & i4)
+				 'Add the child to the parent
+			     gcti.Children.Add(ggcti) 'add the child
+			 Next
+			 'Add the child to the parent
+		     cti.Children.Add(gcti) 'add the child
+		Next
+		 'Add the child to the parent
+	     ti.Children.Add(cti) 'add the child
+	 Next
+	 'Add the parent to the tree
+     TreeView1.Root.Children.Add(ti) 'add the father to the root
+   Next
+End Sub
+
+'Top Level Only
+Sub BuildTree_Option5
+   For i = 1 To 10
+   	'Declare the tree ITEM
+     Dim ti As TreeItem
+	 'Set the text displayed
+     ti.Initialize("ti", "Item #" & i)
+	 'Add the parent to the tree
+     TreeView1.Root.Children.Add(ti) 'add the father to the root
+   Next
+ End Sub  
+ 
+ 'Same as option 5, but this uses the class module
+ Sub BuildTree_Option6
+   For i = 1 To 10
+	 'Add the parent to the tree
+	 tvm.AddRoot(TreeView1, "Item #" & i)
+   Next
+ End Sub  
+
+#End Region
+
+#Region Tree context and main menu on off
+
+Private Sub CollectContextMenuItems(ContextMenus As Map, Items As List)
+   For Each mi As MenuItem In Items
+     If mi.Tag <> Null And mi.Tag <> "" Then ContextMenus.Put(mi.Tag, mi)
+     If mi Is Menu Then
+       Dim mn As Menu = mi
+       CollectContextMenuItems(ContextMenus, mn.MenuItems)
+     End If
+   Next
+End Sub
+
+Private Sub CollectMenuItems(Menus As Map, Items As List)
+   For Each mi As MenuItem In Items
+     If mi.Tag <> Null And mi.Tag <> "" Then Menus.Put(mi.Tag, mi)
+     If mi Is Menu Then
+       Dim mn As Menu = mi
+       CollectMenuItems(Menus, mn.MenuItems)
+     End If
+   Next
+End Sub
+
+Sub TreeContextAllOff
+	Dim listOff As List
+	listOff.Initialize
+	listOff.Add("cmnuAdd")
+	listOff.Add("cmnuMakeParent")
+	listOff.Add("cmnuMoveUp")
+	listOff.Add("cmnuRename")
+	listOff.Add("cmnuEditContent")
+	listOff.Add("cmnuRelateTopic")
+	listOff.Add("cmnuMoveDown")
+	listOff.Add("cmnuAddSubLevel")
+	listOff.Add("cmnuRemove")
+	listOff.Add("cmnuPickup")
+	listOff.Add("cmnuDrop")
+	listOff.Add("cmnuListSiblings")
+	listOff.Add("cmnuListChildren")
+	listOff.Add("cmnuListAntecedents")
+	
+	Dim listMainOff As List
+	listMainOff.Initialize
+	listMainOff.Add("mmnuAddSibling")
+	listMainOff.Add("mmnuMakeParent")
+	listMainOff.Add("mmnuMoveUp")
+	listMainOff.Add("mmnuRename")
+	listMainOff.Add("mmnuEditContent")
+	listMainOff.Add("mmnuRelateTopic")
+	listMainOff.Add("mmnuMoveDown")
+	listMainOff.Add("mmnuAddSubLevel")
+	listMainOff.Add("mmnuRemove")
+	listMainOff.Add("mmnuPickup")
+	listMainOff.Add("mmnuDrop")
+	listMainOff.Add("mmnuListSiblings")
+	listMainOff.Add("mmnuListChildren")
+	listMainOff.Add("mmnuListAntecedents")
+		
+	For i = 0 To mapContextMenus.Size - 1
+		For i2 = 0 To listOff.Size - 1
+			If mapContextMenus.GetKeyAt(i) = listOff.Get(i2) Then
+				Dim mi As MenuItem = mapContextMenus.Get(listOff.Get(i2))
+				mi.Enabled = False
+				Exit
+			End If
+		Next
+	Next
+	For i = 0 To mapMainMenus.Size - 1
+		For i2 = 0 To listOff.Size - 1
+			If mapMainMenus.GetKeyAt(i) = listMainOff.Get(i2) Then
+				Dim mi As MenuItem = mapMainMenus.Get(listMainOff.Get(i2))
+				mi.Enabled = False
+				Exit
+			End If
+		Next
+	Next
+	txtField1.Enabled = False
+	txtField2.Enabled = False
+	txtField3.Enabled = False
+End Sub
+
+Sub TreeContextSet(thisNode As TreeItem)
+	Dim listOn As List
+	listOn.Initialize
+	listOn.Add("cmnuAddSibling")
+	Dim listMainOn As List
+	listMainOn.Initialize
+	Dim listOff As List
+	listOff.Initialize
+	Dim listMainOff As List
+	listMainOff.Initialize
+	If thisNode.IsInitialized = True Then
+		txtField1.Enabled = True
+		txtField2.Enabled = True
+		txtField3.Enabled = True
+		listOn.Add("cmnuAddSubLevel")
+		listOn.Add("cmnuRemove")
+		listOn.Add("cmnuRename")
+		listOn.Add("cmnuPickup")
+		listMainOn.Add("mmnuAddSibling")
+		listMainOn.Add("mmnuAddSubLevel")
+		listMainOn.Add("mmnuRemove")
+		listMainOn.Add("mmnuRename")
+		listMainOn.Add("mmnuPickup")
+		If tvm.HasSiblings(thisNode) = True Then
+			listOn.Add("cmnuListSiblings")
+			listMainOn.Add("mmnuListSiblings")
+		Else
+			listOff.Add("cmnuListSiblings")
+			listMainOff.Add("mmnuListSiblings")
+		End If
+		If tvm.HasChildren(thisNode) = True Then
+			'No editing
+			listOff.Add("cmnuEditContent")
+			listMainOff.Add("mcmnuEditContent")
+			listOn.Add("cmnuListChildren")
+			listMainOn.Add("mmnuListChildren")
+		Else
+			listOn.Add("cmnuEditContent")
+			listMainOn.Add("mmnuEditContent")
+			listOff.Add("cmnuListChildren")
+			listMainOff.Add("mmnuListChildren")
+		End If
+		If tvm.IsFirstChild(thisNode) = True Then
+			'No moving up
+			listOn.Add("cmnuMoveDown")
+			listOff.Add("cmnuMoveUp")
+			listMainOn.Add("mmnuMoveDown")
+			listMainOff.Add("mmnuMoveUp")
+		else If tvm.IsLastChild(thisNode) = True Then
+			'No moving down
+			listOff.Add("cmnuMoveDown")
+			listOn.Add("cmnuMoveUp")
+			listMainOff.Add("mmnuMoveDown")
+			listMainOn.Add("mmnuMoveUp")
+		Else
+			listOn.Add("cmnuMoveDown")
+			listOn.Add("cmnuMoveUp")
+			listMainOn.Add("mmnuMoveDown")
+			listMainOn.Add("mmnuMoveUp")
+		End If
+		If tvm.IsRoot(thisNode) = True Then
+			listOff.Add("cmnuMakeParent")
+			listMainOff.Add("mmnuMakeParent")
+			listOff.Add("cmnuListAntecedents")
+			listMainOff.Add("mmnuListAntecedents")
+		Else
+			listOn.Add("cmnuMakeParent")
+			listMainOn.Add("mmnuMakeParent")
+			listOn.Add("cmnuListAntecedents")
+			listMainOn.Add("mmnuListAntecedents")
+		End If
+		If tvm.IsPickup = True Then
+			listOn.Add("cmnuDrop")
+			listMainOn.Add("mmnuDrop")
+		Else
+			listOff.Add("cmnuDrop")
+			listMainOff.Add("mmnuDrop")
+		End If
+'		If TopicBeingEdited = True Then
+'			listOn.Add("cmnuRelateTopic")
+'		Else
+'			listOff.Add("cmnuRelateTopic")
+'		End If
+	Else
+		txtField1.Enabled = False
+		txtField2.Enabled = False
+		txtField3.Enabled = False
+		listOff.Add("cmnuAddSubLevel")
+		listOff.Add("cmnuRemove")
+		listOff.Add("cmnuRelateTopic")
+		listOff.Add("cmnuRename")
+		listOff.Add("cmnuMoveDown")
+		listOff.Add("cmnuMoveUp")
+		listOff.Add("cmnuMakeParent")
+		listOff.Add("cmnuMakeParent")
+		listOff.Add("cmnuListSiblings")
+		listOff.Add("cmnuListChildren")
+		listOff.Add("cmnuListAntecedents")
+		listMainOff.Add("mmnuAddSubLevel")
+		listMainOff.Add("mmnuAddSibling")
+		listMainOff.Add("mmnuRemove")
+		listMainOff.Add("mmnuRelateTopic")
+		listMainOff.Add("mmnuRename")
+		listMainOff.Add("mmnuMoveDown")
+		listMainOff.Add("mmnuMoveUp")
+		listMainOff.Add("mmnuMakeParent")
+		listMainOff.Add("mmnuListSiblings")
+		listMainOff.Add("mmnuListChildren")
+		listMainOff.Add("mmnuListAntecedents")
+	End If
+	For i = 0 To mapContextMenus.Size - 1
+		'Turn on items
+		For i2 = 0 To listOn.Size - 1
+			If mapContextMenus.GetKeyAt(i) = listOn.Get(i2) Then
+				Dim mi As MenuItem = mapContextMenus.Get(listOn.Get(i2))
+				mi.Enabled = True
+				Exit
+			End If
+		Next
+		'Turn off items
+		For i2 = 0 To listOff.Size - 1
+			If mapContextMenus.GetKeyAt(i) = listOff.Get(i2) Then
+				Dim mi As MenuItem = mapContextMenus.Get(listOff.Get(i2))
+				mi.Enabled = False
+				Exit
+			End If
+		Next
+	Next
+	For i = 0 To mapMainMenus.Size - 1
+		'Turn on items
+		For i2 = 0 To listOn.Size - 1
+			If mapMainMenus.GetKeyAt(i) = listMainOn.Get(i2) Then
+				Dim mi As MenuItem = mapMainMenus.Get(listMainOn.Get(i2))
+				mi.Enabled = True
+				Exit
+			End If
+		Next
+		'Turn off items
+		For i2 = 0 To listOff.Size - 1
+			If mapMainMenus.GetKeyAt(i) = listMainOff.Get(i2) Then
+				Dim mi As MenuItem = mapMainMenus.Get(listMainOff.Get(i2))
+				mi.Enabled = False
+				Exit
+			End If
+		Next
+	Next
+End Sub
+
+#End Region
+
+#Region Context Menu Handlers
+
+Sub TreeView1_SelectedItemChanged(SelectedItem As TreeItem)
+	If boolHandlingMouseClick = False Then
+		If SelectedItem.IsInitialized = True Then
+			lastTreeItemSelected = SelectedItem
+			taResults.text = "Focussed Node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+		End If
+	End If
+End Sub
+
+Sub cmenuAddSibling_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = "Adding same level sibling"
+		Dim strNewName As String 
+		strNewName = dialogue8.TextInputDialog("Topic List Management", "New Topic", "Enter topic name:", "")
+		If strNewName <> "" Then
+			tvm.AddSibling(lastTreeItemSelected, strNewName)
+			taResults.Text = "Adding New Node Name: " & strNewName
+		End If
+	Else
+		taResults.Text = "Adding root item"
+		Dim strNewName As String 
+		strNewName = dialogue8.TextInputDialog("Topic List Management", "New Root Topic", "Enter root topic name:", "")
+		If strNewName <> "" Then
+			lastTreeItemSelected = tvm.AddRoot(TreeView1, strNewName)
+			taResults.Text = "Adding New Node Name: " & strNewName
+		End If
+	End If
+End Sub
+
+Sub cmenuRename_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = ""
+		Dim strNewName As String 
+		strNewName = dialogue8.TextInputDialog("Topic List Management", "Rename Topic", "Enter new topic name:", lastTreeItemSelected.Text)
+		If strNewName <> "" Then
+			taResults.Text = "Renaming " & lastTreeItemSelected.Text & " to " & strNewName
+			tvm.Rename(lastTreeItemSelected, strNewName)
+		End If
+		taResults.Text = taResults.Text & CRLF & CRLF & "Node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+	End If
+End Sub
+
+Sub cmenuMoveUp_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = "Moving node named " & lastTreeItemSelected.Text & " up one level in the list the parents children."
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+		tvm.MoveUp(lastTreeItemSelected)
+	End If
+End Sub
+
+Sub cmenuMoveDown_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = "Moving node named " & lastTreeItemSelected.Text & " down one level in the list the parents children."
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+		tvm.MoveDown(lastTreeItemSelected)
+	End If
+End Sub
+
+Sub cmenuRemove_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = "Selected to remove the node named " & lastTreeItemSelected.text
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+		If dialogue8.ConfirmationDialog("Topic List Management", "Remove Topic", "Confirm you want to delete this item.") = True Then
+			tvm.Remove(lastTreeItemSelected)
+			taResults.Text = taResults.Text & CRLF & "Node removed."
+		End If
+	End If
+End Sub
+
+Sub cmenuMakeParent_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = "Moving the node " & lastTreeItemSelected.Text & " to the parent level (left)."
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+		tvm.MakeParent(lastTreeItemSelected)
+	End If
+End Sub
+
+Sub cmenuPickup_Action
+	taResults.Text = ""
+	tvm.Pickup(lastTreeItemSelected)
+	taResults.text = "The node " & lastTreeItemSelected.Text & " has been marked for movement to a new location."
+	taResults.Text = taResults.Text & CRLF & CRLF & "Node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected) & "; IsSibling: "
+End Sub
+
+Sub cmenuDrop_Action
+	taResults.text = "The node " & lastTreeItemSelected.Text & " has been moved to a new location."
+	tvm.Drop(lastTreeItemSelected)
+End Sub
+
+Sub cmenuAddSubLevel_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = "New child is being added to the selected node " & lastTreeItemSelected.Text
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+		Dim strNewName As String 
+		strNewName = dialogue8.TextInputDialog("Topic List Management", "New Topic", "Enter topic name:", "")
+		If strNewName <> "" Then
+			tvm.AddChild(lastTreeItemSelected, strNewName)
+			taResults.Text = taResults.Text & CRLF & "Child name " & strNewName & " has been added."
+		End If
+	End If
+End Sub
+
+Sub cmenuListChildren_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = "Children's Names:" & CRLF
+		Dim listShowNames As List
+		listShowNames.Initialize
+		listShowNames.AddAll(tvm.ListChildrenNames(lastTreeItemSelected))
+		If listShowNames.Size > 0 Then
+			For i = 0 To listShowNames.Size -1
+				taResults.Text = taResults.Text & listShowNames.Get(i) & "; "
+			Next
+			taResults.Text = taResults.Text & CRLF & CRLF & "Children's Nodes:" & CRLF
+			Dim listShowNodes As List
+			listShowNodes.Initialize
+			listShowNodes.AddAll(tvm.ListChildrenNodes(lastTreeItemSelected))
+			For i = 0 To listShowNodes.Size -1
+				taResults.Text = taResults.Text & listShowNodes.Get(i) & "; "
+			Next
+		Else
+			taResults.Text = taResults.Text & "The selected node has no children."
+		End If
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+	End If
+End Sub
+
+Sub cmenuListSiblings_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = "Sibling's Names:" & CRLF
+		Dim listShowNames As List
+		listShowNames.Initialize
+		listShowNames.AddAll(tvm.ListSiblingNames(lastTreeItemSelected))
+		If listShowNames.Size > 0 Then
+			For i = 0 To listShowNames.Size -1
+				taResults.Text = taResults.Text & listShowNames.Get(i) & "; "
+			Next
+			taResults.Text = taResults.Text & CRLF & CRLF & "Sibling's Nodes:" & CRLF
+			Dim listShowNodes As List
+			listShowNodes.Initialize
+			listShowNodes.AddAll(tvm.ListSiblingNodes(lastTreeItemSelected))
+			For i = 0 To listShowNodes.Size -1
+				taResults.Text = taResults.Text & listShowNodes.Get(i) & "; "
+			Next
+		Else
+			taResults.Text = taResults.Text & "The selected node has no siblings."
+		End If
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+	End If
+End Sub
+
+Sub cmenuListAntecedents_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = "Antecedent's Names:" & CRLF
+		Dim listShowNames As List
+		listShowNames.Initialize
+		listShowNames.AddAll(tvm.ListAntecedentNames(lastTreeItemSelected))
+		If listShowNames.Size > 0 Then
+			For i = 0 To listShowNames.Size -1
+				taResults.Text = taResults.Text & listShowNames.Get(i) & "; "
+			Next
+			taResults.Text = taResults.Text & CRLF & CRLF & "Antecedent's Nodes:" & CRLF
+			Dim listShowNodes As List
+			listShowNodes.Initialize
+			listShowNodes.AddAll(tvm.ListAntecedentNodes(lastTreeItemSelected))
+			For i = 0 To listShowNodes.Size -1
+				taResults.Text = taResults.Text & listShowNodes.Get(i) & "; "
+			Next
+		Else
+			taResults.Text = taResults.Text & "The selected node is root."
+		End If
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+	End If
+End Sub
+
+Sub cmenuEdit_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+
+		'Project specific method
+
+
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+	End If
+End Sub
+
+Sub cmenuRelateTopic_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		taResults.Text = ""
+
+		'Project specific method
+
+
+
+		taResults.Text = taResults.Text & CRLF & CRLF & "Selected node Name: " & lastTreeItemSelected.Text & "; Generation: " & tvm.generation(lastTreeItemSelected) & "; UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+	End If
+End Sub
+
+#End Region
+
+#Region main menu handlers
+
+Sub MenuBar1_Action
+	If lastTreeItemSelected.IsInitialized = True Then
+		Dim mi As MenuItem = Sender
+		Select Case mi.Text
+		    Case "Add Same Level Topic"
+		        cmenuAddSibling_Action
+		    Case "Make this a Parent Topic"
+		        cmenuMakeParent_Action
+		    Case "Move UP"
+		        cmenuMoveUp_Action
+		    Case "Pick-up"
+		        cmenuPickup_Action
+		    Case "Drop"
+		        cmenuDrop_Action
+		    Case "Rename"
+		        cmenuRename_Action
+		    Case "Move DOWN"
+		        cmenuMoveDown_Action
+		    Case "Add Sub Topic"
+		        cmenuAddSubLevel_Action
+		    Case "List Siblings"
+		        cmenuListSiblings_Action
+		    Case "List Children"
+		        cmenuListChildren_Action
+		    Case "List Antecedents"
+		        cmenuListAntecedents_Action
+		    Case "Remove"
+		        cmenuRemove_Action
+		End Select
+	End If
+End Sub
+
+Sub mmenuExit_Action
+	ExitApplication
+End Sub
+        
+Sub mmenuExportJSON_Action
+	Dim strFromJSON As String = tvm.ToJSON(TreeView1)
+	File.WriteString(File.DirApp, "treeview_json.txt", strFromJSON)
+    fx.ShowExternalDocument(File.GetUri(File.DirApp, "treeview_json.txt"))
+End Sub
+ 
+Sub mmenuExportXML_Action
+	Dim strFromXML As String = tvm.ToXML(TreeView1)
+	File.WriteString(File.DirApp, "treeview_xml.xml", strFromXML)
+    fx.ShowExternalDocument(File.GetUri(File.DirApp, "treeview_xml.xml"))
+End Sub
+        
+Sub mmenuImportJSON_Action
+	Dim strJSON As String = File.ReadString(File.DirApp, "treeview_json.txt")
+	tvm.BuildTreeFromJSON(TreeView1, strJSON)
+End Sub
+        
+#End Region
+
+#Region TreeView MouseClicks
+
+Sub TreeView1_MousePressed (EventData As MouseEvent)
+	boolHandlingMouseClick = True
+	lastTreeItemSelected = Null
+End Sub
+
+Sub TreeView1_MouseReleased (EventData As MouseEvent)
+	TreeContextAllOff
+	taResults.Text = ""
+    Dim jo As JavaObject = EventData
+    Dim target As JavaObject = jo.RunMethodJO("getTarget", Null)
+    Do Until target Is TreeView
+        If GetType(target) = "com.sun.javafx.scene.control.skin.TreeViewSkin$1" Then
+            lastTreeItemSelected = target.RunMethod("getTreeItem", Null)
+			If lastTreeItemSelected.IsInitialized = True Then
+				TreeContextSet(lastTreeItemSelected)
+				taResults.Text = "MouseUp on node Name: " & lastTreeItemSelected.Text & CRLF & "Generation: " & tvm.generation(lastTreeItemSelected) & CRLF & "UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+				boolHandlingMouseClick = False
+				txtField1.Text = ""
+				txtField2.Text = ""
+				txtField3.Text = ""
+				If mapDataStore.ContainsKey(tvm.UniquNodeIdentifier(lastTreeItemSelected)) = True Then
+					taResults.Text = taResults.Text & CRLF & "The in-memory map has stored text field values for the selected item using tvm.UniqueID: " & tvm.UniquNodeIdentifier(lastTreeItemSelected)
+					Dim mapStored As Map
+					mapStored.Initialize
+					mapStored = mapDataStore.Get(tvm.UniquNodeIdentifier(lastTreeItemSelected))
+					If mapStored.ContainsKey("txtField1") = True Then
+						txtField1.Text = mapStored.Get("txtField1")
+					End If
+					If mapStored.ContainsKey("txtField2") = True Then
+						txtField2.Text = mapStored.Get("txtField2")
+					End If
+					If mapStored.ContainsKey("txtField3") = True Then
+						txtField3.Text = mapStored.Get("txtField3")
+					End If
+				End If
+			End If
+			Exit
+		End If
+		Dim n As Node = target
+		target = n.Parent
+	Loop
+	If taResults.Text = "" Then
+		taResults.Text = "Root Focus"
+	End If
+	boolHandlingMouseClick = False
+End Sub
+
+#End Region
+
+#Region toJSON and toXML
+
+Sub btnToXML_Action
+	Dim strFromXML As String = tvm.ToXML(TreeView1)
+	File.WriteString(File.DirApp, "treeview_xml.xml", strFromXML)
+	If strFromXML <> "" Then
+		taResults.Text = strFromXML
+	Else
+		taResults.Text = "XML string was empty"
+	End If
+    fx.ShowExternalDocument(File.GetUri(File.DirApp, "treeview_xml.xml"))
+End Sub
+
+Sub btnToJson_Action
+	Dim strFromJSON As String = tvm.ToJSON(TreeView1)
+	File.WriteString(File.DirApp, "treeview_json.txt", strFromJSON)
+	If strFromJSON <> "" Then
+		taResults.Text = strFromJSON
+	Else
+		taResults.Text = "JSON string was empty"
+	End If
+    fx.ShowExternalDocument(File.GetUri(File.DirApp, "treeview_json.txt"))
+End Sub
+
+#End Region
+
+#Region text field save data
+
+Sub txtField3_FocusChanged (HasFocus As Boolean)
+	If HasFocus = False Then
+		If lastTreeItemSelected <> Null Then
+			If lastTreeItemSelected.IsInitialized = True Then
+				If txtField3.Text <> "" Then
+					mapDataStore.Put(tvm.UniquNodeIdentifier(lastTreeItemSelected), CreateMap("txtField3" : txtField3.Text, "txtField2" : txtField2.Text, "txtField1" : txtField1.Text))
+				Else
+					If mapDataStore.ContainsKey(tvm.UniquNodeIdentifier(lastTreeItemSelected)) = True Then
+						If txtField1.Text <> "" Or txtField2.Text <> "" Then
+							mapDataStore.Put(tvm.UniquNodeIdentifier(lastTreeItemSelected), CreateMap("txtField3" : txtField3.Text, "txtField2" : txtField2.Text, "txtField1" : txtField1.Text))
+						else IF txtField1.Text = "" And txtField2.Text = "" Then
+							mapDataStore.Remove(tvm.UniquNodeIdentifier(lastTreeItemSelected))
+						End If
+					End If
+				End If
+			End If
+		End If
+	End If
+End Sub
+
+Sub txtField2_FocusChanged (HasFocus As Boolean)
+	If HasFocus = False Then
+		If lastTreeItemSelected <> Null Then
+			If lastTreeItemSelected.IsInitialized = True Then
+				If txtField2.Text <> "" Then
+					mapDataStore.Put(tvm.UniquNodeIdentifier(lastTreeItemSelected), CreateMap("txtField3" : txtField3.Text, "txtField2" : txtField2.Text, "txtField1" : txtField1.Text))
+				Else
+					If mapDataStore.ContainsKey(tvm.UniquNodeIdentifier(lastTreeItemSelected)) = True Then
+						If txtField1.Text <> "" Or txtField3.Text <> "" Then
+							mapDataStore.Put(tvm.UniquNodeIdentifier(lastTreeItemSelected), CreateMap("txtField3" : txtField3.Text, "txtField2" : txtField2.Text, "txtField1" : txtField1.Text))
+						Else IF txtField1.Text = "" And txtField3.Text = "" Then
+							mapDataStore.Remove(tvm.UniquNodeIdentifier(lastTreeItemSelected))
+						End If
+					End If
+				End If
+			End If
+		End If
+	End If
+End Sub
+
+Sub txtField1_FocusChanged (HasFocus As Boolean)
+	If HasFocus = False Then
+		If lastTreeItemSelected <> Null Then
+			If lastTreeItemSelected.IsInitialized = True Then
+				If txtField1.Text <> "" Then
+					mapDataStore.Put(tvm.UniquNodeIdentifier(lastTreeItemSelected), CreateMap("txtField3" : txtField3.Text, "txtField2" : txtField2.Text, "txtField1" : txtField1.Text))
+				Else
+					If mapDataStore.ContainsKey(tvm.UniquNodeIdentifier(lastTreeItemSelected)) = True Then
+						If txtField3.Text <> "" Or txtField2.Text <> "" Then
+							mapDataStore.Put(tvm.UniquNodeIdentifier(lastTreeItemSelected), CreateMap("txtField3" : txtField3.Text, "txtField2" : txtField2.Text, "txtField1" : txtField1.Text))
+						else IF txtField3.Text = "" And txtField2.Text = "" Then
+							mapDataStore.Remove(tvm.UniquNodeIdentifier(lastTreeItemSelected))
+						End If
+					End If
+				End If
+			End If
+		End If
+	End If
+End Sub
+
+#End Region
