@@ -9,13 +9,19 @@ Sub Class_Globals
 	Public FamilyErrorNode As Int
 	Private listGlobal As List
 	Private mapPickup As Map
+	Private TreeViewObject As TreeView
 End Sub
 
 'Initializes the object.
 Public Sub Initialize(objTreeView As TreeView)
-	FamilyErrorNode = -1
-	listGlobal.Initialize
-	mapPickup.Initialize
+	If objTreeView <> Null Then
+		If objTreeView.IsInitialized = True Then
+			TreeViewObject = objTreeView
+			FamilyErrorNode = -1
+			listGlobal.Initialize
+			mapPickup.Initialize
+		End If
+	End If
 End Sub
 
 'Adds a sibling node to an EXISTING SELECTED node (If the tree doees not have any nodes, use AddRoot).
@@ -29,7 +35,7 @@ Public Sub AddSibling(objNodeSelected As TreeItem, strNewName As String) As Tree
 	If objNodeSelected <> Null Then
 		If objNodeSelected.IsInitialized = True Then
 			If strNewName <> "" Then
-				If unique_name(objNodeSelected.Parent, strNewName) = False Then
+				If unique_name(objNodeSelected.Parent, strNewName) = True Then
 					'Restricted charactes that might cause a problem with JSON export
 					strNewName = strNewName.Replace("{", "")
 					strNewName = strNewName.Replace("}", "")
@@ -61,14 +67,14 @@ End Sub
 'Will not add the name unless it is unique amongst it's siblings.
 'Ex:
 'tvm.AddRoot(TreeView1, "Item Name")
-Public Sub AddRoot(tv As TreeView, strNewName As String) As TreeItem
+Public Sub AddRoot(strNewName As String) As TreeItem
 	'If we did pick something up, we are doing something different now, so clear it.
 	pickup_and_drop_clear
-	If tv <> Null Then
-		If tv.IsInitialized = True Then
+	If TreeViewObject <> Null Then
+		If TreeViewObject.IsInitialized = True Then
 			If strNewName <> "" Then 
 				'Make sure that a name is unique amongst it's siblings, so that we can generate a UniqueID
-				If unique_name(tv.Root, strNewName) = False Then
+				If unique_name(TreeViewObject.Root, strNewName) = True Then
 					If strNewName.EqualsIgnoreCase(Null) = False Then
 						'Restricted charactes that might cause a problem with JSON export
 						strNewName = strNewName.Replace("{", "")
@@ -80,7 +86,7 @@ Public Sub AddRoot(tv As TreeView, strNewName As String) As TreeItem
 						strNewName = strNewName.Replace($"""$, "")
 						Dim newNode As TreeItem
 						newNode.Initialize("ti",strNewName)
-						tv.root.Children.Add(newNode)
+						TreeViewObject.root.Children.Add(newNode)
 						Return newNode
 					End If
 				End If
@@ -97,7 +103,7 @@ Public Sub AddChild(objNodeSelected As TreeItem, strNewName As String) As TreeIt
 		If objNodeSelected.IsInitialized = True Then
 			If strNewName <> "" Then 
 				'Make sure that a name is unique amongst it's siblings, so that we can generate a UniqueID
-				If unique_name(objNodeSelected, strNewName) = False Then
+				If unique_name(objNodeSelected, strNewName) = True Then
 					If strNewName.EqualsIgnoreCase(Null) = False Then
 						'Restricted charactes that might cause a problem with JSON export
 						strNewName = strNewName.Replace("{", "")
@@ -370,7 +376,7 @@ Private Sub drop_insert(parentNode As TreeItem, intIndex As Int)
 		If mapPickup.ContainsKey("Text") = True And mapPickup.ContainsKey("IndexOf") = True And mapPickup.ContainsKey("Children") = True Then
 			If parentNode.IsInitialized = True And mapPickup.Get("Text") <> "" Then
 				'Make sure that a name is unique amongst it's siblings, so that we can generate a UniqueID
-				If unique_name(parentNode, mapPickup.Get("Text")) = False Then
+				If unique_name(parentNode, mapPickup.Get("Text")) = True Then
 					Dim newNode As TreeItem
 					newNode.Initialize("ti", mapPickup.Get("Text"))
 					parentNode.Children.InsertAt(intIndex, newNode)
@@ -396,7 +402,7 @@ Private Sub drop_add(parentNode As TreeItem)
 		If mapPickup.ContainsKey("Text") = True Then
 			If parentNode.IsInitialized = True And mapPickup.Get("Text") <> "" Then
 				'Make sure that a name is unique amongst it's siblings, so that we can generate a UniqueID
-				If unique_name(parentNode, mapPickup.Get("Text")) = False Then
+				If unique_name(parentNode, mapPickup.Get("Text")) = True Then
 					Dim newNode As TreeItem
 					newNode.Initialize("ti", mapPickup.Get("Text"))
 					Dim listTemp As List = mapPickup.Get("Children")
@@ -435,7 +441,7 @@ Public Sub MakeParent(objNodeSelected As TreeItem)
 				Dim grandparentNode As TreeItem = parentNode.Parent
 				If grandparentNode.IsInitialized = True Then
 					'Make sure that a name is unique amongst it's siblings, so that we can generate a UniqueID
-					If unique_name(grandparentNode, objNodeSelected.Text) = False Then
+					If unique_name(grandparentNode, objNodeSelected.Text) = True Then
 						Dim intIndexOfParent As Int = grandparentNode.Children.IndexOf(parentNode)
 						Dim intOriginalTreeItemIndex As Int = parentNode.Children.IndexOf(objNodeSelected)
 						If intIndexOfParent = grandparentNode.Children.Size - 1 Then
@@ -640,14 +646,12 @@ Public Sub UniquNodeIdentifier(thisNode As TreeItem) As String
 End Sub
 
 'Returns the name of the parent of the sected node.
-Public Sub ParentName(objTreeView As TreeView, childNode As TreeItem) As String
-	If objTreeView <> Null And childNode <> Null Then
-		If objTreeView.IsInitialized = True Then
-			If childNode.IsInitialized = True Then
-				If childNode.Parent <> Null Then
-					Dim parentItem As TreeItem = childNode.Parent
-					Return parentItem.Text
-				End If
+Public Sub ParentName(childNode As TreeItem) As String
+	If childNode <> Null Then
+		If childNode.IsInitialized = True Then
+			If childNode.Parent <> Null Then
+				Dim parentItem As TreeItem = childNode.Parent
+				Return parentItem.Text
 			End If
 		End If
 	End If
@@ -723,33 +727,29 @@ End Sub
 'returns the node names, not any data that is stored with it. However, by
 'using the saved JSON string to rebuild the tree, the data will still be
 'referenced as the rebuilt tree will still generate the same uniqueIDs
-Public Sub ToJSON(objTreeView As TreeView) As String
+Public Sub ToJSON() As String
 	Dim listJSON As List
 	listJSON.Initialize
-	If objTreeView <> Null Then
-		If objTreeView.IsInitialized = True Then
-			If objTreeView.Root.Children.Size > 0 Then
-				'Loop through each root item
-				Dim tempList As List = recurse_tree_for_json(objTreeView.Root)
-				If tempList <> Null Then
-					If tempList.IsInitialized = True Then
-						For i2 = 0 To tempList.Size - 1
-							Dim strThis As String = tempList.Get(i2)
-							If strThis.CharAt(0) = "{" Then
-								listJSON.Add(tempList.Get(i2))
-							Else
-								Dim strThis2 As String = $"{ "Text" : "${tempList.Get(i2)}" }"$
-								If i2 < (tempList.Size - 1) Then
-									If strThis2.CharAt(strThis2.Length - 1) <> "," Then
-										strThis2 = strThis2 & ","
-									End If
-								End If
-								strThis2 = strThis2.Replace(",,", ",")
-								listJSON.Add(strThis2)
+	If TreeViewObject.Root.Children.Size > 0 Then
+		'Loop through each root item
+		Dim tempList As List = recurse_tree_for_json(TreeViewObject.Root)
+		If tempList <> Null Then
+			If tempList.IsInitialized = True Then
+				For i2 = 0 To tempList.Size - 1
+					Dim strThis As String = tempList.Get(i2)
+					If strThis.CharAt(0) = "{" Then
+						listJSON.Add(tempList.Get(i2))
+					Else
+						Dim strThis2 As String = $"{ "Text" : "${tempList.Get(i2)}" }"$
+						If i2 < (tempList.Size - 1) Then
+							If strThis2.CharAt(strThis2.Length - 1) <> "," Then
+								strThis2 = strThis2 & ","
 							End If
-						Next
+						End If
+						strThis2 = strThis2.Replace(",,", ",")
+						listJSON.Add(strThis2)
 					End If
-				End If
+				Next
 			End If
 		End If
 	End If
@@ -782,28 +782,24 @@ Private Sub recurse_json_for_tree(topNode As TreeItem, children As List)
 End Sub
 
 'Takes a JSON string and rebuilds the treeview.
-Public Sub BuildTreeFromJSON(tv As TreeView, strJSON As String)
-	If tv <> Null Then
-		If tv.IsInitialized = True Then
-		    If tv.Root.Children.IsInitialized = True Then
-			    tv.Root.Children.Clear
+Public Sub BuildTreeFromJSON(strJSON As String)
+    If TreeViewObject.Root.Children.IsInitialized = True Then
+	    TreeViewObject.Root.Children.Clear
+	End If
+    If strJSON <> "" Then
+		Dim parser As JSONParser 
+		parser.Initialize(strJSON) 
+		Dim root As Map = parser.NextObject 
+		Dim tvList As List = root.Get("TreeView") 
+		For Each colTreeView As Map In tvList 
+			Dim strText As String = colTreeView.Get("Text") 
+			Dim topNode As TreeItem = AddRoot(strText)
+			If topNode.IsInitialized = True Then
+				If colTreeView.ContainsKey("Children") = True Then
+					recurse_json_for_tree(topNode, colTreeView.Get("Children"))
+				End If
 			End If
-		    If strJSON <> "" Then
-				Dim parser As JSONParser 
-				parser.Initialize(strJSON) 
-				Dim root As Map = parser.NextObject 
-				Dim tvList As List = root.Get("TreeView") 
-				For Each colTreeView As Map In tvList 
-					Dim strText As String = colTreeView.Get("Text") 
-					Dim topNode As TreeItem = AddRoot(tv, strText)
-					If topNode.IsInitialized = True Then
-						If colTreeView.ContainsKey("Children") = True Then
-							recurse_json_for_tree(topNode, colTreeView.Get("Children"))
-						End If
-					End If
-				Next
-			End If
-		End If
+		Next
 	End If
 End Sub 
 
@@ -887,28 +883,24 @@ Private Sub recurse_tree_for_xml(thisNode As TreeItem) As List
 	End If
 End Sub
 
-Public Sub ToXML(objTreeView As TreeView) As String
+Public Sub ToXML As String
 	Dim listXML As List
 	listXML.Initialize
-	If objTreeView <> Null Then
-		If objTreeView.IsInitialized = True Then
-			If objTreeView.Root.Children.Size > 0 Then
-				'Loop through each root item
-				Dim tempList As List = recurse_tree_for_xml(objTreeView.Root)
-				If tempList <> Null Then
-					If tempList.IsInitialized = True Then
-						For i2 = 0 To tempList.Size - 1
-							Dim strThis As String = tempList.Get(i2)
-							If strThis.CharAt(0) = "{" Then
-								listXML.Add(tempList.Get(i2))
-							Else
-								'Dim strThis2 As String = $"<RootParent>"$ & CRLF & $"    <Text>${tempList.Get(i2)}</Text>"$ & CRLF & $"</RootParent>"$
-								Dim strThis2 As String = tempList.Get(i2)
-								listXML.Add(strThis2)
-							End If
-						Next
+	If TreeViewObject.Root.Children.Size > 0 Then
+		'Loop through each root item
+		Dim tempList As List = recurse_tree_for_xml(TreeViewObject.Root)
+		If tempList <> Null Then
+			If tempList.IsInitialized = True Then
+				For i2 = 0 To tempList.Size - 1
+					Dim strThis As String = tempList.Get(i2)
+					If strThis.CharAt(0) = "{" Then
+						listXML.Add(tempList.Get(i2))
+					Else
+						'Dim strThis2 As String = $"<RootParent>"$ & CRLF & $"    <Text>${tempList.Get(i2)}</Text>"$ & CRLF & $"</RootParent>"$
+						Dim strThis2 As String = tempList.Get(i2)
+						listXML.Add(strThis2)
 					End If
-				End If
+				Next
 			End If
 		End If
 	End If
@@ -924,38 +916,36 @@ End Sub
 
 #End Region
 
-
 'Checks that a name does not exist amongst siblings, where a node is being inserted/added.
 Private Sub unique_name(parentNode As TreeItem, strName As String) As Boolean
+	Dim boolTest As Boolean = True
 	If parentNode <> Null Then
 		If parentNode.IsInitialized = True Then
 			If strName <> "" Then
 				For Each childNode As TreeItem In parentNode.Children
 					If childNode.Text = strName Then
-						Return True
+						boolTest = False
 					End If
 				Next
 			End If
 		End If
 	End If
-	Return False
+	Return boolTest
 End Sub
 
 'Checks an existing node being renamed does not have a sibling with that name
 Private Sub unique_name2(parentNode As TreeItem, compareNode As TreeItem, strName As String) As Boolean
+	Dim boolTest As Boolean = True
 	If parentNode <> Null And compareNode <> Null Then
 		If parentNode.IsInitialized = True And compareNode.IsInitialized = True Then
 			If strName <> "" Then
 				For Each childNode As TreeItem In parentNode.Children
 					If childNode.Text = strName And childNode <> compareNode Then
-						Return True
+						boolTest = False
 					End If
 				Next
 			End If
 		End If
 	End If
-	Return False
+	Return boolTest
 End Sub
-
-
-
